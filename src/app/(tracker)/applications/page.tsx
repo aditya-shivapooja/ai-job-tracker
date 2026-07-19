@@ -9,6 +9,12 @@ import { requireUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { StatusSelect } from "@/components/status-select";
 
+type ApplicationsPageProps = {
+  searchParams: Promise<{
+    q?: string;
+  }>;
+};
+
 function toApplicationStatus(status: string): ApplicationStatus {
   if (APPLICATION_STATUSES.includes(status as ApplicationStatus)) {
     return status as ApplicationStatus;
@@ -17,11 +23,23 @@ function toApplicationStatus(status: string): ApplicationStatus {
   return "Applied";
 }
 
-export default async function ApplicationsPage() {
+export default async function ApplicationsPage({
+  searchParams,
+}: ApplicationsPageProps) {
   const user = await requireUser();
+  const { q } = await searchParams;
+  const searchQuery = q?.trim() ?? "";
   const applications = await prisma.application.findMany({
     where: {
       userId: user.id,
+      ...(searchQuery
+        ? {
+            company: {
+              contains: searchQuery,
+              mode: "insensitive",
+            },
+          }
+        : {}),
     },
     orderBy: {
       dateApplied: "desc",
@@ -44,6 +62,44 @@ export default async function ApplicationsPage() {
           Add Application
         </Link>
       </div>
+
+      <form
+        action="/applications"
+        className="flex flex-col gap-3 rounded-lg border border-[#d9dee8] bg-white p-4 shadow-sm sm:flex-row"
+      >
+        <div className="grid flex-1 gap-2">
+          <label
+            className="text-sm font-semibold text-[#374151]"
+            htmlFor="company-search"
+          >
+            Search company
+          </label>
+          <input
+            className="h-11 rounded-md border border-[#cfd6e3] px-3 text-sm outline-none transition placeholder:text-[#9ca3af] focus:border-[#2f6f73]"
+            defaultValue={searchQuery}
+            id="company-search"
+            name="q"
+            placeholder="Search by company name"
+            type="search"
+          />
+        </div>
+        <div className="flex items-end gap-2">
+          <button
+            className="inline-flex h-11 items-center justify-center rounded-md bg-[#111827] px-4 text-sm font-semibold text-white transition hover:bg-[#263244]"
+            type="submit"
+          >
+            Search
+          </button>
+          {searchQuery ? (
+            <Link
+              className="inline-flex h-11 items-center justify-center rounded-md border border-[#cfd6e3] bg-white px-4 text-sm font-semibold text-[#111827] transition hover:bg-[#f3f4f6]"
+              href="/applications"
+            >
+              Clear
+            </Link>
+          ) : null}
+        </div>
+      </form>
 
       <div className="overflow-hidden rounded-lg border border-[#d9dee8] bg-white shadow-sm">
         <div className="overflow-x-auto">
@@ -87,7 +143,9 @@ export default async function ApplicationsPage() {
                     className="px-4 py-10 text-center text-[#6b7280]"
                     colSpan={4}
                   >
-                    No applications yet.
+                    {searchQuery
+                      ? `No applications found for "${searchQuery}".`
+                      : "No applications yet."}
                   </td>
                 </tr>
               ) : null}
@@ -98,4 +156,3 @@ export default async function ApplicationsPage() {
     </section>
   );
 }
-
