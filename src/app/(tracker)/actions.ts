@@ -27,6 +27,22 @@ function getOptionalString(formData: FormData, key: string) {
   return value.trim();
 }
 
+function getRequiredDate(formData: FormData, key: string) {
+  const value = getRequiredString(formData, key);
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new Error(`${key} is invalid`);
+  }
+
+  const date = new Date(`${value}T00:00:00`);
+
+  if (Number.isNaN(date.getTime())) {
+    throw new Error(`${key} is invalid`);
+  }
+
+  return date;
+}
+
 export async function createApplication(formData: FormData) {
   const user = await requireUser();
   const status = formData.get("status");
@@ -40,6 +56,7 @@ export async function createApplication(formData: FormData) {
       company: getRequiredString(formData, "company"),
       role: getRequiredString(formData, "role"),
       status,
+      dateApplied: getRequiredDate(formData, "dateApplied"),
       jobDescription: getOptionalString(formData, "jobDescription"),
       notes: getOptionalString(formData, "notes"),
       userId: user.id,
@@ -73,4 +90,3 @@ export async function updateApplicationStatus(formData: FormData) {
   revalidatePath("/dashboard");
   revalidatePath("/applications");
 }
-
