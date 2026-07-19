@@ -1,4 +1,5 @@
 import { auth, signIn, signOut } from "@/auth";
+import Link from "next/link";
 
 export default async function Home() {
   const session = await auth();
@@ -50,6 +51,13 @@ export default async function Home() {
                     Sign out
                   </button>
                 </form>
+
+                <Link
+                  className="inline-flex w-full items-center justify-center rounded-md bg-[#2f6f73] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#25595c]"
+                  href="/dashboard"
+                >
+                  Go to dashboard
+                </Link>
               </div>
             ) : (
               <div className="space-y-4">
